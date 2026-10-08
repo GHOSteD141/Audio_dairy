@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Old nested project (kept only until it is deleted).
+    "audio_diary/**",
   ]),
 ]);
 
