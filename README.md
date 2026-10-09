@@ -76,6 +76,7 @@ Variables on Vercel):
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret. |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32`. Must stay stable or every session is invalidated. |
 | `NEXTAUTH_URL` | `http://localhost:3000` locally; your production URL on Vercel. |
+| `GOOGLE_SITE_VERIFICATION` | *Optional.* Search Console ownership token; renders the `google-site-verification` meta tag. Only needed for the consent-screen branding check (see below). |
 
 > The Groq key **can** live in either place; the OAuth credentials and the NextAuth
 > secret intentionally cannot be edited from the UI (they are needed before the server
@@ -182,6 +183,36 @@ in [`app/terms/page.tsx`](app/terms/page.tsx); both are linked from the dashboar
 footer. Edit the `CONTACT_EMAIL` constant in each file if the contact address changes.
 If your app is not at `audiodairy.vercel.app`, swap the host for your own domain
 (and keep `NEXTAUTH_URL` in sync).
+
+### "The website of your home page URL … is not registered to you"
+
+If the **Branding** page reports this, it is not about the privacy policy or terms
+links — Google checks that the *Application home page* host is one you have proven
+ownership of, using **Google Search Console**. Two things to know:
+
+- **You do not have to resolve this to publish the app.** Because Audio Diary only
+  requests non-sensitive scopes, branding verification is **optional** — it only
+  controls whether your app name/logo appear on the consent screen instead of a
+  generic "unverified app" note. Publishing (leaving test mode) is done from
+  **Audience → Publish app** and is independent of this. You can simply dismiss the
+  branding-issues dialog.
+- **If you *do* want the verified consent screen**, prove ownership first:
+
+  1. Add a **URL-prefix** property for `https://audiodairy.vercel.app/` in
+     [Google Search Console](https://search.google.com/search-console).
+  2. Choose the **HTML tag** method and copy the `content="…"` token.
+  3. Set it as `GOOGLE_SITE_VERIFICATION` in your Vercel project's environment
+     variables (and redeploy). `app/layout.tsx` renders it as
+     `<meta name="google-site-verification" …>` on every page.
+  4. Back in Search Console, click **Verify**.
+  5. Wait **~24 hours** for Google's systems to update, then return to
+     **Google Auth Platform → Branding**, choose *I have fixed the issues*, and
+     request re-verification.
+
+  > A **Domain** property (the DNS method) will *not* work for `*.vercel.app`, since
+  > you don't control the `vercel.app` apex DNS records — use the URL-prefix +
+  > HTML-tag method above. A custom domain is the cleaner long-term option if you
+  > want full control (including an apex-level DNS verification).
 
 ## Project structure
 
