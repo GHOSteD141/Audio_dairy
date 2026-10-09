@@ -121,11 +121,67 @@ Variables on Vercel):
 1. Push the repository to GitHub and import it in Vercel.
 2. Add the environment variables from step 2 above (`GOOGLE_CLIENT_ID`,
    `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, and optionally `GROQ_API_KEY`).
-3. Set `NEXTAUTH_URL` to your production URL, e.g. `https://your-app.vercel.app`.
+   **Set the scope of every variable to Production (and Preview).** By default
+   Vercel may create them as *Development*-only, in which case a production
+   deployment receives them as empty strings.
+3. Set `NEXTAUTH_URL` to your production URL, e.g. `https://your-app.vercel.app`
+   (no trailing slash — it must match the domain exactly).
 4. Add the production redirect URI in Google Cloud Console:
    `https://your-app.vercel.app/api/auth/callback/google`.
 5. Deploy. Any remaining values (the Groq key / model) can be set from the
    in-app **Settings** page after signing in.
+
+> **Preview / branch URLs** get a different hostname (`*-<hash>-<team>.vercel.app`),
+> which is not in the Google redirect URIs, so OAuth only works on the production
+> domain. Add extra redirect URIs if you need preview sign-in.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| `[next-auth][error][NO_SECRET]` and `/api/auth/*` returns 500 | `NEXTAUTH_SECRET` is not visible to the production build (usually the variable is scoped to *Development* only). | Edit each variable in Vercel → Settings → Environment Variables, tick **Production**/**Preview**, then **Redeploy** (env changes need a fresh build). |
+| `redirect_uri_mismatch` from Google | The redirect URI isn't registered, or `NEXTAUTH_URL` doesn't match the domain. | Add `https://<your-domain>/api/auth/callback/google` to the OAuth client and set `NEXTAUTH_URL` to the exact same origin. |
+| Signed out after ~7 days | The OAuth app is in **Testing** publishing status, which expires external refresh tokens after 7 days. | Publish it: **Google Auth Platform → Audience → Publish app** (see [Leaving test mode](#leaving-test-mode) below). |
+
+### Leaving test mode
+
+While the OAuth app is in **Testing**, only allowlisted test users (max 100) can
+sign in and their refresh tokens are revoked after **7 days**. To turn this off:
+
+1. Open **Google Auth Platform → Audience** for your project:
+   `https://console.cloud.google.com/auth/audience?project=<YOUR_PROJECT_ID>`
+   (older console: **APIs & Services → OAuth consent screen**).
+2. Under **Publishing status** (currently *Testing*) click **Publish app** and confirm.
+3. The status becomes **In production**. Anyone with a Google account can now sign
+   in and refresh tokens no longer expire weekly.
+
+Because this app only requests **non-sensitive** scopes
+(`openid`, `email`, `profile`, `.../auth/drive.file`), Google does **not** require a
+verification review to publish — the change is immediate. (Brand verification is only
+needed if you want your app name/logo shown on the consent screen, and scope
+verification is only needed for *sensitive* or *restricted* scopes such as the full
+`.../auth/drive`.) Existing sessions issued during Testing keep their 7-day limit;
+sign out and back in to get a fresh token.
+
+### Consent screen links (privacy policy & terms)
+
+The **Branding** page of the OAuth consent screen (`Google Auth Platform → Branding`)
+asks for an *Application home page* and an *Application privacy policy link*. These
+must be **public URLs** (reachable without signing in). This repo ships both pages, so
+use the deployed URLs:
+
+| Consent-screen field | Value |
+| --- | --- |
+| Application home page | `https://audiodairy.vercel.app` |
+| Application privacy policy link | `https://audiodairy.vercel.app/privacy` |
+| Application terms of service link | `https://audiodairy.vercel.app/terms` |
+| Authorized domain | `audiodairy.vercel.app` (no scheme/path) |
+
+The policy text lives in [`app/privacy/page.tsx`](app/privacy/page.tsx) and the terms
+in [`app/terms/page.tsx`](app/terms/page.tsx); both are linked from the dashboard
+footer. Edit the `CONTACT_EMAIL` constant in each file if the contact address changes.
+If your app is not at `audiodairy.vercel.app`, swap the host for your own domain
+(and keep `NEXTAUTH_URL` in sync).
 
 ## Project structure
 
@@ -137,6 +193,8 @@ app/
   api/diary/entries/[date]/route.ts # GET : entry JSON (and ?audio=true stream)
   api/settings/route.ts             # GET/PUT: in-app settings (Drive config.json)
   settings/page.tsx                 # settings UI
+  privacy/page.tsx                  # public privacy policy (consent-screen link)
+  terms/page.tsx                    # public terms of service (consent-screen link)
   layout.tsx                        # wraps the app in SessionProvider
   page.tsx                          # dashboard
 components/

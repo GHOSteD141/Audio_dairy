@@ -211,6 +211,16 @@ export default function HomePage() {
       )}
 
       {error && <p className="text-rose-400 text-xs">{error}</p>}
+
+      <footer className="flex items-center justify-center gap-4 pt-2 pb-4 text-xs text-slate-500">
+        <Link href="/privacy" className="hover:text-sky-400 hover:underline">
+          Privacy Policy
+        </Link>
+        <span aria-hidden="true">·</span>
+        <Link href="/terms" className="hover:text-sky-400 hover:underline">
+          Terms of Service
+        </Link>
+      </footer>
     </main>
   );
 }
