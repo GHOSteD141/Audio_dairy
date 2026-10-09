@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = "October 10, 2026";
-const CONTACT_EMAIL = "knightshnb@gmail.com";
+const CONTACT_EMAIL = "knightsnsb@gmail.com";
 
 export default function TermsPage() {
   return (
