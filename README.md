@@ -1,5 +1,7 @@
 # Audio Diary
 
+### 🔗 Live app: **<https://audiodairy.vercel.app>**
+
 A personal voice diary built with Next.js (App Router), TypeScript and Tailwind CSS.
 Record daily voice memos in the browser; the audio is transcribed with **Groq Whisper**
 (`whisper-large-v3`) and everything is stored privately in **your own Google Drive**
