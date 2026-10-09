@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { format, parse } from "date-fns";
-import { CalendarDays, FileAudio, Loader2, LogIn, LogOut } from "lucide-react";
+import { CalendarDays, FileAudio, Loader2, LogIn, LogOut, Settings } from "lucide-react";
+import Link from "next/link";
 import AudioRecorder from "@/components/AudioRecorder";
 import CalendarView from "@/components/CalendarView";
 import type { DiaryEntry } from "@/lib/types";
@@ -109,6 +110,14 @@ export default function HomePage() {
               <p className="text-sm text-white">{session?.user?.name ?? "You"}</p>
               <p className="text-xs text-slate-400">{session?.user?.email}</p>
             </div>
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 text-slate-200 hover:bg-slate-800 text-sm font-medium transition"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </Link>
             <button
               type="button"
               onClick={() => signOut()}

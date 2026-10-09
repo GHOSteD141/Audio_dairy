@@ -40,7 +40,7 @@ async function findFolder(
   return data.files?.[0] ?? null;
 }
 
-async function findFile(
+export async function findFile(
   drive: DriveClient,
   name: string,
   parentId: string,
@@ -64,6 +64,11 @@ export async function getOrCreateRootFolder(drive: DriveClient) {
     fields: "id, name",
   });
   return data;
+}
+
+/** Find the top-level "Audio Diary" folder, or null if it does not exist. */
+export async function findRootFolder(drive: DriveClient) {
+  return findFolder(drive, ROOT_FOLDER_NAME);
 }
 
 /** Find (or create) the "Audio Diary / DD-MM-YYYY" folder. */

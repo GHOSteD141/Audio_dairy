@@ -7,6 +7,7 @@ import {
   getOrCreateDateFolder,
   uploadFile,
 } from "@/lib/drive";
+import { resolveGroqConfig } from "@/lib/settings";
 import type { DiaryEntry } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -14,21 +15,22 @@ export const dynamic = "force-dynamic";
 
 const GROQ_TRANSCRIPTION_URL =
   "https://api.groq.com/openai/v1/audio/transcriptions";
-const WHISPER_MODEL = "whisper-large-v3";
 
 /**
  * Transcribe an audio buffer with Groq's Whisper endpoint.
  * Uses the REST API directly (native fetch/FormData/Blob) so no extra SDK is needed.
+ * The `model` comes from the app settings (Drive `config.json`) or the env fallback.
  */
 async function transcribeWithGroq(
   apiKey: string,
   data: ArrayBuffer,
   fileName: string,
   mimeType: string,
+  model: string,
 ): Promise<string> {
   const body = new FormData();
   body.append("file", new Blob([data], { type: mimeType }), fileName);
-  body.append("model", WHISPER_MODEL);
+  body.append("model", model);
   body.append("response_format", "json");
 
   const res = await fetch(GROQ_TRANSCRIPTION_URL, {
@@ -65,14 +67,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GROQ_API_KEY is not configured" },
-      { status: 500 },
-    );
-  }
-
   let form: FormData;
   try {
     form = await req.formData();
@@ -104,16 +98,30 @@ export async function POST(req: Request) {
   const audioFileName = `recording_${timestamp}.${ext}`;
 
   try {
+    const drive = driveFromToken(session.accessToken);
+
+    // Resolve the Groq key + Whisper model from Drive settings, falling back to env.
+    const { apiKey, model } = await resolveGroqConfig(drive);
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          error:
+            "No Groq API key configured. Add one in Settings or set GROQ_API_KEY.",
+        },
+        { status: 500 },
+      );
+    }
+
     // 1. Transcribe with Groq Whisper.
     const transcript = await transcribeWithGroq(
       apiKey,
       arrayBuffer,
       audioFileName,
       mimeType,
+      model,
     );
 
     // 2. Upload audio + companion JSON to Google Drive.
-    const drive = driveFromToken(session.accessToken);
     const folder = await getOrCreateDateFolder(drive, dateKey);
     if (!folder.id) throw new Error("Could not create Drive folder");
 
