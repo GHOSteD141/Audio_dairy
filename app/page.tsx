@@ -53,19 +53,27 @@ export default function HomePage() {
     }
   }, []);
 
+  // Load the list of recorded dates whenever the session becomes authenticated.
   useEffect(() => {
-    if (isAuthed) {
-      void loadDates();
-    } else if (status === "unauthenticated") {
-      setMarkedDates([]);
-      setEntry(null);
-    }
+    void (async () => {
+      if (isAuthed) {
+        await loadDates();
+        return;
+      }
+      if (status === "unauthenticated") {
+        setMarkedDates([]);
+        setEntry(null);
+      }
+    })();
   }, [isAuthed, status, loadDates]);
 
+  // Load (or clear) the entry for the selected day once the date list is known.
   useEffect(() => {
-    if (!isAuthed) return;
-    if (markedDates.includes(selectedDate)) void loadEntry(selectedDate);
-    else setEntry(null);
+    void (async () => {
+      if (!isAuthed) return;
+      if (markedDates.includes(selectedDate)) await loadEntry(selectedDate);
+      else setEntry(null);
+    })();
   }, [isAuthed, selectedDate, markedDates, loadEntry]);
 
   const handleUploaded = useCallback(() => {
